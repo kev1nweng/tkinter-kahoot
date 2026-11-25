@@ -1,6 +1,7 @@
 import sqlite3
 
 from tkquiz.models import QuestionSet, Question, PlayerScore, Round
+from tkquiz.rules import check_question, check_set
 
 SCHEMA = """
     CREATE TABLE IF NOT EXISTS sets (
@@ -53,6 +54,7 @@ class Storage:
 
     # set methods
     def add_set(self, title: str, time_limit: int) -> int:
+        _require_valid_set(title, time_limit)
         cursor = self.conn.cursor()
         cursor.execute(
             "INSERT INTO sets (title, time_limit) VALUES (?, ?)",
@@ -85,6 +87,7 @@ class Storage:
         ]
 
     def update_set(self, set_id: int, title: str, time_limit: int) -> None:
+        _require_valid_set(title, time_limit)
         cursor = self.conn.cursor()
         cursor.execute(
             "UPDATE sets SET title = ?, time_limit = ? WHERE id = ?",
@@ -103,7 +106,7 @@ class Storage:
 
     # question methods
     def add_question(self, question: Question) -> int:
-        _check_options(question.options)
+        _require_valid_question(question)
         cursor = self.conn.cursor()
         cursor.execute(
             "INSERT INTO questions (set_id, prompt, option_a, option_b, "
@@ -121,7 +124,7 @@ class Storage:
         return cursor.lastrowid
 
     def update_question(self, question: Question) -> None:
-        _check_options(question.options)
+        _require_valid_question(question)
         cursor = self.conn.cursor()
         cursor.execute(
             "UPDATE questions SET prompt = ?, option_a = ?, "
@@ -243,11 +246,13 @@ class StorageError(Exception):
     pass
 
 
-def _check_options(options: list[str]) -> None:
-    if not isinstance(options, list):
-        raise ValueError("options must be a list of four strings")
-    if len(options) != 4:
-        raise ValueError("a question needs exactly four options")
-    for option in options:
-        if not isinstance(option, str):
-            raise ValueError("options must be a list of four strings")
+def _require_valid_question(question: Question) -> None:
+    problems = check_question(question)
+    if problems:
+        raise ValueError("; ".join(problems))
+
+
+def _require_valid_set(title: str, time_limit: int) -> None:
+    problems = check_set(QuestionSet(title=title, time_limit=time_limit))
+    if problems:
+        raise ValueError("; ".join(problems))
