@@ -1,0 +1,9 @@
+{
+  "python.defaultInterpreterPath": "/Users/kw/Desktop/Courses/CCT211/.venv/bin/python",
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.formatOnSave": true
+  },
+  "flake8.args": ["--max-line-length", "79"],
+  "editor.rulers": [79]
+}
